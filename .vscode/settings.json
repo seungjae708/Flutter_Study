@@ -1,0 +1,11 @@
+{
+  "dart.flutterSdkPath": ".fvm/versions/stable",
+  // 검색에서 .fvm 파일들 제거
+  "search.exclude": {
+    "**/.fvm": true
+  },
+  // 파일 감시에서 .fvm 파일들 제거
+  "files.watcherExclude": {
+    "**/.fvm": true
+  }
+}
