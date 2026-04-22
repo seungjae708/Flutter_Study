@@ -17,24 +17,39 @@ class FavoriteListPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('좋아요한 곡 목록')),
       body: SafeArea(
-        child: ListView.builder(
-          itemCount: favoriteSongs.length,
-          itemBuilder: (context, index) {
-            final song = favoriteSongs[index];
-            final isCurrentSong = playerState.currentSongId == song.id;
+        child: favoriteSongs.isEmpty
+            ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.favorite_border, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      '아직 좋아요를 누른 곡이 없어요.',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              )
+            // 데이터가 있으면 기존 ListView 렌더링
+            : ListView.builder(
+                itemCount: favoriteSongs.length,
+                itemBuilder: (context, index) {
+                  final song = favoriteSongs[index];
+                  final isCurrentSong = playerState.currentSongId == song.id;
 
-            return SongTile(
-              isCurrentSong: isCurrentSong,
-              title: song.title,
-              artist: song.artist,
-              albumArtUrl: song.albumArtUrl,
-              onTap: () {
-                ref.read(musicPlayerProvider.notifier).playSong(song.id);
-                context.push('/player/${song.id}');
-              },
-            );
-          },
-        ),
+                  return SongTile(
+                    isCurrentSong: isCurrentSong,
+                    title: song.title,
+                    artist: song.artist,
+                    albumArtUrl: song.albumArtUrl,
+                    onTap: () {
+                      ref.read(musicPlayerProvider.notifier).playSong(song.id);
+                      context.push('/player/${song.id}');
+                    },
+                  );
+                },
+              ),
       ),
     );
   }
