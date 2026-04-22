@@ -1,26 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sopt_practice/models/song.dart';
+import 'package:sopt_practice/providers/music_player_provider.dart';
+import 'package:sopt_practice/providers/song_list_provider.dart';
 
-class MusicPlayerPage extends StatelessWidget {
-  const MusicPlayerPage({super.key});
+class MusicPlayerPage extends ConsumerStatefulWidget {
+  const MusicPlayerPage({super.key, required this.id});
+
+  final String id;
+
+  @override
+  ConsumerState<MusicPlayerPage> createState() => _MusicPlayerPageState();
+}
+
+class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
+  String _formatTime(double seconds) {
+    final min = seconds ~/ 60;
+    final sec = (seconds % 60).toInt();
+    return '$min:${sec.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final playerState = ref.watch(musicPlayerProvider);
+    final songList = ref.watch(songListProvider);
+    final notifier = ref.read(musicPlayerProvider.notifier);
+
+    final song = songList
+        .where((element) => element.id == widget.id)
+        .firstOrNull;
+
+    if (song == null) {
+      return const Scaffold(body: Center(child: Text('곡을 찾을 수 없습니다.')));
+    }
+
     return Scaffold(
-      backgroundColor: const Color(0xFF6B6644),
-      appBar: _buildAppBar(),
+      backgroundColor: const Color(0xFF9E8E55),
+      appBar: _buildAppBar(song),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Column(
-            children: const [
-              SizedBox(height: 32),
-              MusicPlayerAlbumCover(),
-              SizedBox(height: 32),
-              MusicPlayerSongInfo(),
-              SizedBox(height: 8),
-              MusicPlayerProgressBar(),
-              SizedBox(height: 8),
-              MusicPlayerController(),
+            children: [
+              MusicPlayerAlbumCover(albumArtUrl: song.albumArtUrl),
+              const SizedBox(height: 24),
+              MusicPlayerSongInfo(
+                title: song.title,
+                artist: song.artist,
+                isFavorite: song.isFavorite,
+                onToggleFavorite: () =>
+                    ref.read(songListProvider.notifier).toggleFavorite(song.id),
+              ),
+              const SizedBox(height: 16),
+              MusicPlayerProgressBar(
+                progress: playerState.currentPosition,
+                duration: song.duration,
+                onSeek: (value) => notifier.seekTo(value),
+                formatTime: _formatTime,
+              ),
+              const SizedBox(height: 16),
+              MusicPlayerController(
+                isPlaying: playerState.isPlaying,
+                onTogglePlay: () => notifier.togglePlay(),
+              ),
             ],
           ),
         ),
@@ -28,34 +71,27 @@ class MusicPlayerPage extends StatelessWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(Song song) {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      leading: GestureDetector(
-        onTap: () {},
-        child: const Icon(
-          Icons.keyboard_arrow_down,
-          color: Colors.white,
-          size: 32,
-        ),
+      leading: IconButton(
+        icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+        onPressed: () => context.pop(),
       ),
-      title: const Text(
-        'AKMU',
-        style: TextStyle(
+      title: Text(
+        song.artist,
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
       ),
       actions: [
-        GestureDetector(
-          onTap: () {},
-          child: const Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.more_horiz, color: Colors.white, size: 32),
-          ),
+        IconButton(
+          icon: const Icon(Icons.more_horiz, color: Colors.white),
+          onPressed: () {},
         ),
       ],
     );
@@ -63,7 +99,9 @@ class MusicPlayerPage extends StatelessWidget {
 }
 
 class MusicPlayerAlbumCover extends StatelessWidget {
-  const MusicPlayerAlbumCover({super.key});
+  final String albumArtUrl;
+
+  const MusicPlayerAlbumCover({super.key, required this.albumArtUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +112,7 @@ class MusicPlayerAlbumCover extends StatelessWidget {
         height: 350,
         color: Colors.black26,
         child: Image.network(
-          'https://image.genie.co.kr/Y/IMAGE/IMG_ALBUM/087/471/134/87471134_1775454694305_1_600x600.JPG',
+          albumArtUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => const Center(
             child: Icon(Icons.album, size: 120, color: Colors.white54),
@@ -86,33 +124,50 @@ class MusicPlayerAlbumCover extends StatelessWidget {
 }
 
 class MusicPlayerSongInfo extends StatelessWidget {
-  const MusicPlayerSongInfo({super.key});
+  final String title;
+  final String artist;
+  final bool isFavorite;
+  final VoidCallback onToggleFavorite;
+
+  const MusicPlayerSongInfo({
+    super.key,
+    required this.title,
+    required this.artist,
+    required this.isFavorite,
+    required this.onToggleFavorite,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              '소문의 낙원',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            SizedBox(height: 4),
-            Text('AKMU', style: TextStyle(color: Colors.white70, fontSize: 16)),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                artist,
+                style: const TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            ],
+          ),
         ),
         GestureDetector(
-          onTap: () {},
-          child: const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Icon(Icons.favorite_border, color: Colors.white, size: 32),
+          onTap: onToggleFavorite,
+          child: Icon(
+            isFavorite ? Icons.favorite : Icons.favorite_border,
+            color: isFavorite ? Colors.red : Colors.white,
+            size: 32,
           ),
         ),
       ],
@@ -121,29 +176,59 @@ class MusicPlayerSongInfo extends StatelessWidget {
 }
 
 class MusicPlayerProgressBar extends StatelessWidget {
-  const MusicPlayerProgressBar({super.key});
+  final double progress;
+  final int duration;
+  final ValueChanged<double> onSeek;
+  final String Function(double) formatTime;
+
+  const MusicPlayerProgressBar({
+    super.key,
+    required this.progress,
+    required this.duration,
+    required this.onSeek,
+    required this.formatTime,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final double musicCurrentSec = progress * duration;
+    final int musicFullSec = duration;
+
     return Column(
       children: [
         SliderTheme(
           data: const SliderThemeData(
-            trackHeight: 3,
+            trackHeight: 5,
+            padding: EdgeInsets.only(top: 16),
             thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
             activeTrackColor: Colors.white,
             inactiveTrackColor: Colors.white24,
             thumbColor: Colors.white,
           ),
-          child: Slider(value: 0.5, onChanged: (value) {}),
+          child: Slider(
+            value: musicCurrentSec / musicFullSec,
+            onChanged: onSeek,
+          ),
         ),
+
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            Text('1:52', style: TextStyle(color: Colors.white70, fontSize: 12)),
+          children: [
             Text(
-              '-1:56',
-              style: TextStyle(color: Colors.white70, fontSize: 12),
+              formatTime(musicCurrentSec),
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.w300,
+              ),
+            ),
+            Text(
+              "-${formatTime(musicFullSec - musicCurrentSec)}",
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.w300,
+              ),
             ),
           ],
         ),
@@ -153,41 +238,39 @@ class MusicPlayerProgressBar extends StatelessWidget {
 }
 
 class MusicPlayerController extends StatelessWidget {
-  const MusicPlayerController({super.key});
+  final bool isPlaying;
+  final VoidCallback onTogglePlay;
+
+  const MusicPlayerController({
+    super.key,
+    required this.isPlaying,
+    required this.onTogglePlay,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        const Icon(Icons.shuffle, color: Colors.white, size: 24),
+        const Icon(Icons.skip_previous, color: Colors.white, size: 36),
         GestureDetector(
-          onTap: () {},
-          child: const Icon(Icons.shuffle, color: Colors.white70, size: 24),
-        ),
-        GestureDetector(
-          onTap: () {},
-          child: const Icon(Icons.skip_previous, color: Colors.white, size: 40),
-        ),
-        GestureDetector(
-          onTap: () {},
+          onTap: onTogglePlay,
           child: Container(
-            width: 64,
-            height: 64,
             decoration: const BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.pause, color: Color(0xFF6B6644), size: 32),
+            padding: const EdgeInsets.all(12),
+            child: Icon(
+              isPlaying ? Icons.pause : Icons.play_arrow,
+              color: Colors.black,
+              size: 36,
+            ),
           ),
         ),
-        GestureDetector(
-          onTap: () {},
-          child: const Icon(Icons.skip_next, color: Colors.white, size: 40),
-        ),
-        GestureDetector(
-          onTap: () {},
-          child: const Icon(Icons.repeat, color: Colors.white70, size: 24),
-        ),
+        const Icon(Icons.skip_next, color: Colors.white, size: 36),
+        const Icon(Icons.repeat, color: Colors.white, size: 24),
       ],
     );
   }
