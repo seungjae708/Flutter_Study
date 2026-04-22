@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sopt_practice/pages/favorite_list_page.dart';
 import 'package:sopt_practice/pages/music_player_page.dart';
 import 'package:sopt_practice/pages/song_list_page.dart';
 
@@ -33,6 +34,10 @@ final router = GoRouter(
           },
         );
       },
+    ),
+    GoRoute(
+      path: '/favorites',
+      builder: (context, state) => const FavoriteListPage(),
     ),
   ],
 );
