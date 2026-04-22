@@ -5,16 +5,11 @@ import 'package:sopt_practice/models/song.dart';
 import 'package:sopt_practice/providers/music_player_provider.dart';
 import 'package:sopt_practice/providers/song_list_provider.dart';
 
-class MusicPlayerPage extends ConsumerStatefulWidget {
+class MusicPlayerPage extends ConsumerWidget {
   const MusicPlayerPage({super.key, required this.id});
 
   final String id;
 
-  @override
-  ConsumerState<MusicPlayerPage> createState() => _MusicPlayerPageState();
-}
-
-class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
   String _formatTime(double seconds) {
     final min = seconds ~/ 60;
     final sec = (seconds % 60).toInt();
@@ -22,13 +17,11 @@ class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final playerState = ref.watch(musicPlayerProvider);
     final songList = ref.watch(songListProvider);
 
-    final song = songList
-        .where((element) => element.id == widget.id)
-        .firstOrNull;
+    final song = songList.where((element) => element.id == id).firstOrNull;
 
     if (song == null) {
       return const Scaffold(body: Center(child: Text('곡을 찾을 수 없습니다.')));
@@ -36,7 +29,7 @@ class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF9E8E55),
-      appBar: _buildAppBar(song),
+      appBar: _buildAppBar(context, song),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -72,7 +65,7 @@ class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(Song song) {
+  PreferredSizeWidget _buildAppBar(BuildContext context, Song song) {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -211,7 +204,6 @@ class MusicPlayerProgressBar extends StatelessWidget {
             onChanged: onSeek,
           ),
         ),
-
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
