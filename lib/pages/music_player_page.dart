@@ -25,7 +25,6 @@ class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
   Widget build(BuildContext context) {
     final playerState = ref.watch(musicPlayerProvider);
     final songList = ref.watch(songListProvider);
-    final notifier = ref.read(musicPlayerProvider.notifier);
 
     final song = songList
         .where((element) => element.id == widget.id)
@@ -56,13 +55,15 @@ class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
               MusicPlayerProgressBar(
                 progress: playerState.currentPosition,
                 duration: song.duration,
-                onSeek: (value) => notifier.seekTo(value),
+                onSeek: (value) =>
+                    ref.read(musicPlayerProvider.notifier).seekTo(value),
                 formatTime: _formatTime,
               ),
               const SizedBox(height: 16),
               MusicPlayerController(
                 isPlaying: playerState.isPlaying,
-                onTogglePlay: () => notifier.togglePlay(),
+                onTogglePlay: () =>
+                    ref.read(musicPlayerProvider.notifier).togglePlay(),
               ),
             ],
           ),
