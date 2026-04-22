@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sopt_practice/pages/SpotipyPlayer.dart';
+import 'package:sopt_practice/pages/music_player_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const SpotifyPlayer(),
+      home: const MusicPlayerPage(),
     );
   }
 }
